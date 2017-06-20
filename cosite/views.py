@@ -63,142 +63,142 @@ def report_multi(req):
     return render(req, 'cosite/report_vBRAS_multi.html')
 
 
-def api4get_data(req):
-    if req.method == 'GET':
-        needed_params = req.GET.getlist('selectedParams[]')
-        items = DetectedParams.objects \
-            .only('add_time', *needed_params) \
-            .filter(add_time__gt=req.GET.get('timeBegin'),
-                    add_time__lt=req.GET.get('timeEnd')).all()
-
-        # test add model to MultiTest table --> success execute!!!
-        # mt = MultiTest()
-        # mt.task_id = uuid.uuid1()
-        # mt.cpu = 0.99
-        # mt.memory = 0.88
-        # mt.add_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        # mt.save()
-
-        result = []
-        for item in items:
-            rst = {}
-            for param in needed_params:
-                rst[param] = getattr(item, param)
-            rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
-            result.append(rst)
-        return HttpResponse(json.dumps(result), content_type='text/json')
-    return HttpResponse('Permission denied!', status=403)
+# def api4get_data(req):
+#     if req.method == 'GET':
+#         needed_params = req.GET.getlist('selectedParams[]')
+#         items = DetectedParams.objects \
+#             .only('add_time', *needed_params) \
+#             .filter(add_time__gt=req.GET.get('timeBegin'),
+#                     add_time__lt=req.GET.get('timeEnd')).all()
+#
+#         # test add model to MultiTest table --> success execute!!!
+#         # mt = MultiTest()
+#         # mt.task_id = uuid.uuid1()
+#         # mt.cpu = 0.99
+#         # mt.memory = 0.88
+#         # mt.add_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+#         # mt.save()
+#
+#         result = []
+#         for item in items:
+#             rst = {}
+#             for param in needed_params:
+#                 rst[param] = getattr(item, param)
+#             rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+#             result.append(rst)
+#         return HttpResponse(json.dumps(result), content_type='text/json')
+#     return HttpResponse('Permission denied!', status=403)
 
 # 初始化支持向量机
-classifiers = {"Nearest Neighbors": KNeighborsClassifier(3),
-               "Linear SVM": SVC(kernel="linear", C=0.025),
-               "RBF SVM": SVC(gamma=2, C=1),
-               "Gaussian Process": GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
-               "Decision Tree": DecisionTreeClassifier(max_depth=5),
-               "Random Forest": RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
-               "Neural Net": MLPClassifier(alpha=1),
-               "AdaBoost": AdaBoostClassifier(),
-               "Naive Bayes": GaussianNB(),
-               "QDA": QuadraticDiscriminantAnalysis()}
-property_params = ['ave_anneal_soak_t',
-                   'ave_anneal_rapid_cool_outlet_t',
-                   'ave_anneal_slow_cool_outlet_t',
-                   'pc', 'pmn', 'pp', 'ps',
-                   'finishing_inlet_t', 'finishing_outlet_t', 'coiling_t']
-property_max_min = {'ave_anneal_soak_t': [854.9, 797.6],
-                    'ave_anneal_rapid_cool_outlet_t': [455.7, 398.6],
-                    'ave_anneal_slow_cool_outlet_t': [665.4, 614.9],
-                    'pc': [0.0025, 0.0011],
-                    'pmn': [0.16, 0.1],
-                    'pp': [0.014, 0.007],
-                    'ps': [0.0139, 0.0024],
-                    'finishing_inlet_t': [1076.4, 1014.1],
-                    'finishing_outlet_t': [927.2, 912.5],
-                    'coiling_t': [753.4, 654.5]}
-origin_data = pickle.load(open('data.pkl', 'rb'))
+# classifiers = {"Nearest Neighbors": KNeighborsClassifier(3),
+#                "Linear SVM": SVC(kernel="linear", C=0.025),
+#                "RBF SVM": SVC(gamma=2, C=1),
+#                "Gaussian Process": GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True),
+#                "Decision Tree": DecisionTreeClassifier(max_depth=5),
+#                "Random Forest": RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+#                "Neural Net": MLPClassifier(alpha=1),
+#                "AdaBoost": AdaBoostClassifier(),
+#                "Naive Bayes": GaussianNB(),
+#                "QDA": QuadraticDiscriminantAnalysis()}
+# property_params = ['ave_anneal_soak_t',
+#                    'ave_anneal_rapid_cool_outlet_t',
+#                    'ave_anneal_slow_cool_outlet_t',
+#                    'pc', 'pmn', 'pp', 'ps',
+#                    'finishing_inlet_t', 'finishing_outlet_t', 'coiling_t']
+# property_max_min = {'ave_anneal_soak_t': [854.9, 797.6],
+#                     'ave_anneal_rapid_cool_outlet_t': [455.7, 398.6],
+#                     'ave_anneal_slow_cool_outlet_t': [665.4, 614.9],
+#                     'pc': [0.0025, 0.0011],
+#                     'pmn': [0.16, 0.1],
+#                     'pp': [0.014, 0.007],
+#                     'ps': [0.0139, 0.0024],
+#                     'finishing_inlet_t': [1076.4, 1014.1],
+#                     'finishing_outlet_t': [927.2, 912.5],
+#                     'coiling_t': [753.4, 654.5]}
+# origin_data = pickle.load(open('data.pkl', 'rb'))
 
 
-def api4get_exception(req):
-    if req.method == 'GET':
-        needed_params = req.GET.getlist('selectedParams[]')
-        items = DetectedParams.objects.filter(add_time__gt=req.GET.get('timeBegin'),
-                                              add_time__lt=req.GET.get('timeEnd')).all()[:50]
-        # unpredicted_items = []
-        # for item in items:
-        #     if item.label == 0:
-        #         unpredicted_items.append(item)
-        test_data = []
-        # for item in unpredicted_items:
-        for item in items:
-            data = []
-            for param in property_params:
-                data.append(getattr(item, param))
-            test_data.append(data)
-
-        clf = classifiers[req.GET.get('algorithm')]
-        clf.fit(origin_data['train_data'], origin_data['target_data'])
-        test_result = clf.predict(test_data) if len(test_data) > 0 else []
-        # test_result = [result.item() for result in test_result]
-
-        # for i in range(len(unpredicted_items)):
-        #     if test_result[i] != unpredicted_items[i].label:
-        #         unpredicted_items[i].label = test_result[i]
-        #         unpredicted_items[i].save()
-        # for i in range(len(items)):
-        #     if test_result[i] != items[i].label:
-        #         items[i].label = test_result[i]
-        #         items[i].save()
-
-        result = []
-        for i in range(len(items)):
-            rst = {}
-            for param in needed_params:
-                rst[param] = getattr(items[i], param)
-            rst['add_time'] = items[i].add_time.strftime('%Y-%m-%d %H:%M:%S')
-            rst['label'] = test_result[i].item()
-            result.append(rst)
-        return HttpResponse(json.dumps([result, property_max_min]), content_type='text/json')
-    return HttpResponse('Permission denied!', status=403)
-
-
-def api4get_correlation(req):
-    if req.method == 'GET':
-        needed_params = req.GET.getlist('selectedParams[]')
-        items = DetectedParams.objects \
-            .only('add_time', *needed_params) \
-            .filter(add_time__gt=req.GET.get('timeBegin'),
-                    add_time__lt=req.GET.get('timeEnd')).all()
-        data = []
-        for i in range(len(needed_params)):
-            data.append([])
-            for item in items:
-                data[i].append(getattr(item, needed_params[i]))
-
-        cnf = gra(data[0], data[1:])
-        result = {needed_params[0]: 1}
-        for i in range(1, len(needed_params)):
-            result[needed_params[i]] = cnf[i]
-        return HttpResponse(json.dumps(result), content_type='text/json')
-    return HttpResponse('Permission denied!', status=403)
-
-
-def gra(ref, origin_des):
-    ref_0 = ref[0]
-    des = [[cell for cell in row] for row in origin_des]
-    ref = list(map(lambda x: x / ref_0, ref))
-    for i in range(len(des)):
-        for j in range(len(des[0])):
-
-            des[i][j] = abs(origin_des[i][j] / origin_des[i][0] - ref[j])
-    des_max = max(list(map(max, des)))
-    result = []
-    for row in des:
-        des_sum = 0
-        for cell in row:
-            des_sum += (0.5 * des_max) / (cell + 0.5 * des_max)
-        result.append(des_sum / len(des[0]))
-    result.insert(0, 1)
-    return result
+# def api4get_exception(req):
+#     if req.method == 'GET':
+#         needed_params = req.GET.getlist('selectedParams[]')
+#         items = DetectedParams.objects.filter(add_time__gt=req.GET.get('timeBegin'),
+#                                               add_time__lt=req.GET.get('timeEnd')).all()[:50]
+#         # unpredicted_items = []
+#         # for item in items:
+#         #     if item.label == 0:
+#         #         unpredicted_items.append(item)
+#         test_data = []
+#         # for item in unpredicted_items:
+#         for item in items:
+#             data = []
+#             for param in property_params:
+#                 data.append(getattr(item, param))
+#             test_data.append(data)
+#
+#         clf = classifiers[req.GET.get('algorithm')]
+#         clf.fit(origin_data['train_data'], origin_data['target_data'])
+#         test_result = clf.predict(test_data) if len(test_data) > 0 else []
+#         # test_result = [result.item() for result in test_result]
+#
+#         # for i in range(len(unpredicted_items)):
+#         #     if test_result[i] != unpredicted_items[i].label:
+#         #         unpredicted_items[i].label = test_result[i]
+#         #         unpredicted_items[i].save()
+#         # for i in range(len(items)):
+#         #     if test_result[i] != items[i].label:
+#         #         items[i].label = test_result[i]
+#         #         items[i].save()
+#
+#         result = []
+#         for i in range(len(items)):
+#             rst = {}
+#             for param in needed_params:
+#                 rst[param] = getattr(items[i], param)
+#             rst['add_time'] = items[i].add_time.strftime('%Y-%m-%d %H:%M:%S')
+#             rst['label'] = test_result[i].item()
+#             result.append(rst)
+#         return HttpResponse(json.dumps([result, property_max_min]), content_type='text/json')
+#     return HttpResponse('Permission denied!', status=403)
+#
+#
+# def api4get_correlation(req):
+#     if req.method == 'GET':
+#         needed_params = req.GET.getlist('selectedParams[]')
+#         items = DetectedParams.objects \
+#             .only('add_time', *needed_params) \
+#             .filter(add_time__gt=req.GET.get('timeBegin'),
+#                     add_time__lt=req.GET.get('timeEnd')).all()
+#         data = []
+#         for i in range(len(needed_params)):
+#             data.append([])
+#             for item in items:
+#                 data[i].append(getattr(item, needed_params[i]))
+#
+#         cnf = gra(data[0], data[1:])
+#         result = {needed_params[0]: 1}
+#         for i in range(1, len(needed_params)):
+#             result[needed_params[i]] = cnf[i]
+#         return HttpResponse(json.dumps(result), content_type='text/json')
+#     return HttpResponse('Permission denied!', status=403)
+#
+#
+# def gra(ref, origin_des):
+#     ref_0 = ref[0]
+#     des = [[cell for cell in row] for row in origin_des]
+#     ref = list(map(lambda x: x / ref_0, ref))
+#     for i in range(len(des)):
+#         for j in range(len(des[0])):
+#
+#             des[i][j] = abs(origin_des[i][j] / origin_des[i][0] - ref[j])
+#     des_max = max(list(map(max, des)))
+#     result = []
+#     for row in des:
+#         des_sum = 0
+#         for cell in row:
+#             des_sum += (0.5 * des_max) / (cell + 0.5 * des_max)
+#         result.append(des_sum / len(des[0]))
+#     result.insert(0, 1)
+#     return result
 
 
 # test
@@ -309,15 +309,6 @@ def api4_vnf1_itest(req):
         # print(temp)
         d = json.loads(req.body.decode('utf-8'))
 
-        # taskId = d.get('taskId')
-
-        # obj = PPPoESessionTest.objects.get(task_id=taskId)
-        # obj.session_num = '10000'
-        # obj.add_time = '19901108'
-        # obj.save()
-
-        # print(obj.session_num)
-
         obj = PPPoESessionTest()
         obj.task_id = d.get('taskId')
 
@@ -331,6 +322,13 @@ def api4_vnf1_itest(req):
                 obj.save()
         else:
             obj.save()
+
+        if TestCaseState.objects.get(task_id=d.get('taskId')).set_session == result['session_num']:
+            cur_obj = TestCaseState.objects.get(current_state=True)
+
+            if cur_obj:
+                cur_obj.current_state = False
+                cur_obj.save()
 
         print(d)
 
@@ -379,15 +377,6 @@ def api4_vnf2_itest(req):
         # temp = req.POST
         # print(temp)
         d = json.loads(req.body.decode('utf-8'))
-
-        # taskId = d.get('taskId')
-
-        # obj = PPPoESessionTest.objects.get(task_id=taskId)
-        # obj.session_num = '10000'
-        # obj.add_time = '19901108'
-        # obj.save()
-
-        # print(obj.session_num)
 
         obj = UserTransTest()
         obj.task_id = d.get('taskId')
@@ -450,15 +439,6 @@ def api4_vnf3_itest(req):
         # temp = req.POST
         # print(temp)
         d = json.loads(req.body.decode('utf-8'))
-
-        # taskId = d.get('taskId')
-
-        # obj = PPPoESessionTest.objects.get(task_id=taskId)
-        # obj.session_num = '10000'
-        # obj.add_time = '19901108'
-        # obj.save()
-
-        # print(obj.session_num)
 
         obj = MultiTest()
         obj.task_id = d.get('taskId')
@@ -577,13 +557,15 @@ def api4_save_cpu_memory(req):
         d = json.loads(req.body.decode('utf-8'))
         print(d)
         task_id = d.get('taskid')
+        type_name = d.get('typename')
+        print('typename::::' + type_name)
 
         client = InfluxDBClient('172.16.110.251', 8086, 'root', '', 'metrics')
         result_mea = client.query('show measurements;')
         print("Result:{0}".format(result_mea))
         # 显示measurements中的libvirt_domain_metrics的最新的一条数据,返回ResultSet
         result = client.query(
-            'select "cpu_time_pct","mem_unused","time" from "libvirt_domain_metrics" where time>now() - 1s limit 1')
+            'select "cpu_time_pct","mem_rss","time" from "libvirt_domain_metrics" where time>now() - 1s limit 1')
         # 返回list
         result_point = list(result.get_points(measurement='libvirt_domain_metrics'))
         print(result_point[0])  # 输出一个dict结构的字段
@@ -591,22 +573,20 @@ def api4_save_cpu_memory(req):
         cpu_value = result_point[0]['cpu_time_pct']
         print(cpu_value)
         print('======输出Memory利用率======')
-        mem_value = result_point[0]['mem_unused']
+        mem_value = result_point[0]['mem_rss']
         print(mem_value)
         print('======输出时间戳======')
         time_value = result_point[0]['time']
         print(time_value)
 
-        type_name = TestCaseState.objects.get(task_id=task_id).type_name
-
         flag = 0
-        if type_name == 'VNF_1_Concurrent_Session_Capacity':
+        if type_name == '1':
             if PPPoESessionTest.objects.filter(task_id=task_id).first():
                 flag = 1
-        elif type_name == 'VNF_2_VBRAS_Client_Forwarding_Performance':
+        elif type_name == '2':
             if UserTransTest.objects.filter(task_id=task_id).first():
                 flag = 1
-        elif type_name == 'VNF_3_PPPoE_IPTV_IPoE_VoIP':
+        elif type_name == '3':
             if MultiTest.objects.filter(task_id=task_id).first():
                 flag = 1
 
@@ -677,7 +657,7 @@ def api4_get_index_memory(req):
             for item in items:
                 rst = {}
                 rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
-                rst['cpu'] = item.cpu
+                rst['memory'] = item.memory
                 data.append(rst)
 
         return HttpResponse(json.dumps(data), content_type='application/json')
@@ -693,11 +673,12 @@ def api4_index_task_details(req):
         taskid = d.get('taskid')
         tasktype = d.get('tasktype')
         begin_time = TestCaseState.objects.get(task_id=taskid).add_time.strftime('%Y-%m-%d %H:%M:%S')
-        current_session = PPPoESessionTest.objects.filter(task_id=taskid).last().session_num
+        # current_session = PPPoESessionTest.objects.filter(task_id=taskid).last().session_num
         set_session = TestCaseState.objects.get(task_id=taskid).set_session
 
         if tasktype == '1':
             # 待测代码
+            current_session = PPPoESessionTest.objects.filter(task_id=taskid).last().session_num
             data = {'set_session': set_session, 'current_session': current_session, 'begin_time': begin_time}
             # 测试数据
             # data = {'set_session': 10000, 'current_session': 8000, 'begin_time': '2017-06-06 10:00'}
@@ -706,50 +687,50 @@ def api4_index_task_details(req):
             # 待测代码
             obj = UserTransTest.objects.filter(task_id=taskid)
 
-            obj_64 = obj.filter(frame_size=64).last()
-            if obj_64:
-                frame_size_64 = obj_64.avg_latency
+            obj_68 = obj.filter(frame_size=68).last()
+            if obj_68:
+                frame_size_68 = obj_68.avg_latency
             else:
-                frame_size_64 = None
+                frame_size_68 = 0
 
             obj_128 = obj.filter(frame_size=128).last()
             if obj_128:
                 frame_size_128 = obj_128.avg_latency
             else:
-                frame_size_128 = None
+                frame_size_128 = 0
 
             obj_256 = obj.filter(frame_size=256).last()
             if obj_256:
                 frame_size_256 = obj_256.avg_latency
             else:
-                frame_size_256 = None
+                frame_size_256 = 0
 
             obj_512 = obj.filter(frame_size=512).last()
             if obj_512:
                 frame_size_512 = obj_512.avg_latency
             else:
-                frame_size_512 = None
+                frame_size_512 = 0
 
             obj_1024 = obj.filter(frame_size=1024).last()
             if obj_1024:
                 frame_size_1024 = obj_1024.avg_latency
             else:
-                frame_size_1024 = None
+                frame_size_1024 = 0
 
             obj_1280 = obj.filter(frame_size=1280).last()
             if obj_1280:
                 frame_size_1280 = obj_1280.avg_latency
             else:
-                frame_size_1280 = None
+                frame_size_1280 = 0
 
             obj_1518 = obj.filter(frame_size=1518).last()
             if obj_1518:
                 frame_size_1518 = obj_1518.avg_latency
             else:
-                frame_size_1518 = None
+                frame_size_1518 = 0
 
-            data = {'set_session': set_session, 'current_session': current_session,
-                    'frame_size_64': frame_size_64, 'frame_size_128': frame_size_128,
+            data = {'set_session': set_session, 'current_session': 0,
+                    'frame_size_68': frame_size_68, 'frame_size_128': frame_size_128,
                     'frame_size_256': frame_size_256, 'frame_size_512': frame_size_512,
                     'frame_size_1024': frame_size_1024, 'frame_size_1280': frame_size_1280,
                     'frame_size_1518': frame_size_1518, 'begin_time': begin_time}
@@ -763,6 +744,7 @@ def api4_index_task_details(req):
 
         elif tasktype == '3':
             # 待测代码
+            current_session = PPPoESessionTest.objects.filter(task_id=taskid).last().session_num
             data = {'set_session': set_session, 'current_session': current_session, 'begin_time': begin_time}
 
             # 测试数据

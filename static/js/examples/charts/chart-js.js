@@ -168,6 +168,7 @@ $(function(){
                 data:
                   JSON.stringify({
                       taskid: taskId,
+                      typename:taskType,
                   }),
                 });
               $.ajax('/api/v1/get-index-cpu/', {
@@ -257,12 +258,13 @@ $(function(){
                   switch(taskType)
                   {
                       case '1':
+
                           var taskTypeTitle = 'PPPOE并发会话容量测试';
                           var taskDetail = '';
                           break;
                       case '2':
                           var taskTypeTitle = 'vBRAS用户侧转发性能测试';
-                          var taskDetail = '<h6>64字节 平均时延 <span class="code" id="FS_64">' + data.frame_size_64 + 'μs</span></h6>' +
+                          var taskDetail = '<h6>68字节 平均时延 <span class="code" id="FS_68">' + data.frame_size_68 + 'μs</span></h6>' +
                                 '<h6>128字节 平均时延 <span class="code" id="FS_128">' + data.frame_size_128 + 'μs</span></h6>' +
                                 '<h6>256字节 平均时延 <span class="code" id="FS_256">' + data.frame_size_256 + 'μs</span></h6>' +
                                 '<h6>512字节 平均时延 <span class="code" id="FS_512">' + data.frame_size_512 + 'μs</span></h6>' +

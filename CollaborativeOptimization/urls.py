@@ -22,9 +22,9 @@ urlpatterns = [
     url(r'^$', coviews.index),
     url(r'^admin/', admin.site.urls),
     url(r'^co/', include('cosite.urls')),
-    url(r'^api/v1/get-data/', coviews.api4get_data),
-    url(r'^api/v1/get-exception/', coviews.api4get_exception),
-    url(r'^api/v1/get-correlation/', coviews.api4get_correlation),
+    # url(r'^api/v1/get-data/', coviews.api4get_data),
+    # url(r'^api/v1/get-exception/', coviews.api4get_exception),
+    # url(r'^api/v1/get-correlation/', coviews.api4get_correlation),
     # test
     url(r'^api/v1/test/', coviews.api4_test),
     url(r'^api/v1/test2/', coviews.api4_test2),
@@ -49,7 +49,7 @@ urlpatterns = [
     # 接收finalResult结果
     url(r'^api/v1/final-result/', coviews.api4_final_result),
 
-    # ————————欣然接口————————
+    # ————————欣然接口Begin————————
 
     # 刷新页面时的请求，返回当前state为true的测试用例id，若无则返回0
     # url(r'^api/v1/current-task-id/', coviews.api4_current_taskid),
@@ -65,7 +65,7 @@ urlpatterns = [
 
     # 返回
     # url(r'^api/v1/task-list/', coviews.api4_task_list),
-    # ————————欣然接口————————
+    # ————————欣然接口End————————
 
     # index页面第一个图结果返回，CPU利用率、Memory利用率
     url(r'^api/v1/get-index-cpu/', coviews.api4_get_index_cpu),
