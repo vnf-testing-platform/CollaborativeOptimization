@@ -1,0 +1,259 @@
+{% extends 'cosite/globalBase.html' %}
+
+{% block pageTitle %}Collaborative Optimization{% endblock %}
+{% load staticfiles %}
+
+{% block pageHeader %}
+     <script>
+         window.onload=function()
+        {
+            document.getElementById("nav_performance").setAttribute("class","has-child-item open-item active-item");
+            document.getElementById("nav_vBRAS").setAttribute("class","active-item");
+            $(nav_dashboard).removeClass("active-item");
+            document.getElementById("btnShow_Data").click();
+        }
+    </script>
+{% endblock %}
+
+{% block pageBody %}
+            <div class="content-header">
+                <div class="leftside-content-header">
+                    <ul class="breadcrumbs">
+                        <li><i class="fa fa-files-o" aria-hidden="true"></i><a href="#">测试报告</a></li>
+                        <li><a>vBRAS综合业务测试报告</a></li>
+                    </ul>
+                </div>
+            </div>
+
+<form class="form-horizontal" role="form">
+  <fieldset>
+    <div class="form-group">
+      <div class="col-lg-5">
+        <label for="timeBegin" class="control-label col-sm-4">开始时间：</label>
+        <div class="input-group date col-sm-8">
+          <input class="form-control" name="timeBegin" id="timeBegin" type="datetime"/>
+          <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+          </span>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <label for="timeEnd" class="control-label col-sm-4">结束时间：</label>
+        <div class="input-group date col-sm-8" id="picker2">
+          <input class="form-control" name="timeEnd" id="timeEnd" type="datetime"/>
+          <span class="input-group-addon">
+            <span class="glyphicon glyphicon-calendar"></span>
+          </span>
+        </div>
+      </div>
+            <div class="form-group">
+        <div class="col-md-12">
+            <div class="col-lg-10">
+                <label for="select2-example-basic" class="control-label col-sm-2">测试任务：</label>
+                        <div class="col-sm-10">
+                            <select name="country" id="test_vBRAS_multi_sn" class="form-control">
+
+
+                                    <option value="201705260001" label="201705260001"></option>
+                                    <option value="201705260002" label="201705260002"></option>
+                                    <option value="201705260003" label="201705260003"></option>
+
+                            </select>
+                        </div>
+    </div>
+      <div class="col-lg-2">
+        <input class="btn btn-primary btn-block" id="btnShow_Data" type="button" value="查询"/>
+      </div>
+    </div>
+            </div>
+    </div>
+  </fieldset>
+</form>
+<button id="btn-html2canvas">导出测试报告</button>
+
+      <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel">
+                        <div class="panel-content">
+                            <div class="table-responsive">
+                                <table id="basic-table" class="table table-striped table-hover" cellspacing="0" width="100%">
+                                    <thead>
+                                    <tr>
+                                        <th>测试ID</th>
+                                        <th>测试类型</th>
+										<th>测试结果</th>
+                                        <th>开始时间</th>
+                                        <th>测试时间</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>201704100001</td>
+                                        <td>vBRAS接入性能测试</td>
+                                        <td>测试通过</td>
+                                        <td>2017-5-27 12：30</td>
+                                        <td>30 min</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+       <div class="row">
+                <div class="col-sm-12">
+                    <div class="panel">
+                        <div class="panel-content">
+                            <div class="table-responsive">
+                                <table id="basic-table" class="table table-striped table-hover" cellspacing="0" width="100%">
+                                    <thead>
+                                    <tr>
+                                        <th>session数</th>
+                                        <th>流量大小</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr>
+                                        <td>10000</td>
+                                        <td>10 G</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row animated fadeInUp">
+                <div class="col-sm-12 col-lg-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6">
+                            <div class="panel">
+                                <div class="panel-content">
+                                    <h5><b>vBRAS</b> CPU利用率</h5>
+                                    <canvas id="line-chart" width="400" height="200"></canvas>
+                                </div>
+
+                            </div>
+                        </div>
+                         <div class="col-sm-12 col-md-6">
+                            <div class="panel">
+                                <div class="panel-content">
+                                    <h5><b>vBRAS</b> 内存利用率</h5>
+                                    <canvas id="area-chart" width="400" height="200"></canvas>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+    <div class="row animated fadeInUp">
+    <div class="col-sm-12 col-lg-12">
+    <div class="row">
+    <div class="col-md-6">
+        <h4 class="section-subtitle"><b>性能资源比(CPU)</b></h4>
+        <div class="panel">
+            <div class="panel-content">
+                <canvas id="myChart_line" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <h4 class="section-subtitle"><b>性能资源比(内存)</b></h4>
+        <div class="panel">
+            <div class="panel-content">
+                <canvas id="myChart_area" width="400" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-12">
+        <h4 class="section-subtitle"><b>资源利用稳定性</b> (标准差)</h4>
+        <div class="panel">
+            <div class="panel-content">
+                <canvas id="myChart_bar" width="400" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+  </div>
+
+    <script>
+$('.date').datetimepicker({
+    format: 'YYYY-MM-DD HH:mm',
+    locale: moment.locale('zh-cn'),
+    showTodayButton: true
+  });
+  $(function(){
+    var now = new Date();
+    var year = now.getFullYear();
+    var month = now.getMonth();
+    var day = now.getDate();
+    var hour = now.getHours();
+    var minute = now.getMinutes();
+    // 默认为到现在为止一个月的时间间隔
+    $('#timeBegin').val(year + '-' + (month-1) + '-' + day + ' ' + hour + ':' + minute);
+    $('#timeEnd').val(year + '-' + (month+1) + '-' + day + ' ' + hour + ':' + minute);
+  });
+</script>
+
+<script type="text/javascript" src="../../static/js/html2canvas.js"></script>
+<script src="../../static/js/jsPdf.debug.js"></script>
+<script type="text/javascript">
+
+      var downPdf = document.getElementById("btn-html2canvas");
+      downPdf.onclick = function() {
+          html2canvas(document.body, {
+              onrendered:function(canvas) {
+
+                  var contentWidth = canvas.width;
+                  var contentHeight = canvas.height;
+
+                  //一页pdf显示html页面生成的canvas高度;
+                  var pageHeight = contentWidth / 592.28 * 841.89;
+                  //未生成pdf的html页面高度
+                  var leftHeight = contentHeight;
+                  //pdf页面偏移
+                  var position = 0;
+                  //a4纸的尺寸[595.28,841.89]，html页面生成的canvas在pdf中图片的宽高
+                  var imgWidth = 595.28;
+                  var imgHeight = 592.28/contentWidth * contentHeight;
+
+                  var pageData = canvas.toDataURL('image/jpeg', 1.0);
+
+                  var pdf = new jsPDF('', 'pt', 'a4');
+
+                  //有两个高度需要区分，一个是html页面的实际高度，和生成pdf的页面高度(841.89)
+                  //当内容未超过pdf一页显示的范围，无需分页
+                  if (leftHeight < pageHeight) {
+                      pdf.addImage(pageData, 'JPEG', 0, 0, imgWidth, imgHeight );
+                  } else {
+                      while(leftHeight > 0) {
+                          pdf.addImage(pageData, 'JPEG', 0, position, imgWidth, imgHeight)
+                          leftHeight -= pageHeight;
+                          position -= 841.89;
+                          //避免添加空白页
+                          if(leftHeight > 0) {
+                              pdf.addPage();
+                          }
+                      }
+                  }
+
+                  pdf.save('content.pdf');
+              }
+          })
+      }
+</script>
+{% endblock %}
+
+{% block pageFooter %}
+    <script src="../../static/js/my/myChart_VNF.js"></script>
+    <script src="../../static/js/examples/charts/chart-js.js"></script>
+
+{% endblock %}
