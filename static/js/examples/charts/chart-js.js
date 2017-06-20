@@ -163,7 +163,7 @@ $(function(){
                           break;
                   }
          if(data.taskid){
-              $.ajax('/api/v1/index-get-cpu-memory', {
+              $.ajax('/api/v1/index-save-cpu-memory', {
                 method: 'POST',
                 data:
                   JSON.stringify({

@@ -86,5 +86,5 @@ urlpatterns = [
     url(r'^api/v1/query-task-stability', coviews.api4_query_task_stability),
 
     # 获取CPU和Memory的值，并存入
-    url(r'^api/v1/index-get-cpu-memory', coviews.api4_save_cpu_memory),
+    url(r'^api/v1/index-save-cpu-memory', coviews.api4_save_cpu_memory),
 ]

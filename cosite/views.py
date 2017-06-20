@@ -517,8 +517,10 @@ def api4_final_result(req):
         obj.save()
 
         cur_obj = TestCaseState.objects.get(current_state=True)
-        cur_obj.current_state = False
-        cur_obj.save()
+
+        if cur_obj:
+            cur_obj.current_state = False
+            cur_obj.save()
 
         data = {'log': 'test'}
         return HttpResponse(json.dumps(data), content_type='application/json')
@@ -595,15 +597,29 @@ def api4_save_cpu_memory(req):
         time_value = result_point[0]['time']
         print(time_value)
 
-        # 获取到的最新一条记录存入数据库
-        new_obj = CPUMemory()
-        new_obj.task_id = task_id
-        new_obj.cpu = cpu_value
-        new_obj.memory = mem_value
-        # new_obj.add_time = time_value
-        time_temp = utc_to_local(time_value.split('.')[0] + 'Z') + int(time_value.split('.')[0].split(':')[2])
-        new_obj.add_time = time_temp
-        new_obj.save()
+        type_name = TestCaseState.objects.get(task_id=task_id).type_name
+
+        flag = 0
+        if type_name == 'VNF_1_Concurrent_Session_Capacity':
+            if PPPoESessionTest.objects.filter(task_id=task_id).first():
+                flag = 1
+        elif type_name == 'VNF_2_VBRAS_Client_Forwarding_Performance':
+            if UserTransTest.objects.filter(task_id=task_id).first():
+                flag = 1
+        elif type_name == 'VNF_3_PPPoE_IPTV_IPoE_VoIP':
+            if MultiTest.objects.filter(task_id=task_id).first():
+                flag = 1
+
+        if flag == 1:
+            # 获取到的最新一条记录存入数据库
+            new_obj = CPUMemory()
+            new_obj.task_id = task_id
+            new_obj.cpu = cpu_value
+            new_obj.memory = mem_value
+            # new_obj.add_time = time_value
+            time_temp = utc_to_local(time_value.split('.')[0] + 'Z') + int(time_value.split('.')[0].split(':')[2])
+            new_obj.add_time = time_temp
+            new_obj.save()
 
         data = {}
 
@@ -794,7 +810,14 @@ def api4_history_task_list(req):
         for item in items:
             rst = {}
             rst['task_id'] = str(item.task_id)
-            rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+            # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+            time_flag = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+            time_array = time.strptime(time_flag, "%Y-%m-%d %H:%M:%S")
+            time_stamp = int(time.mktime(time_array))
+            print(time_stamp)
+            time_stamp += 28800
+
+            rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time_stamp))
             rst['type_name'] = item.type_name
             result.append(rst)
 
@@ -823,7 +846,7 @@ def api4_query_task_cpu(req):
                 current_session = item.session_num
                 set_session = TestCaseState.objects.get(task_id=taskid).set_session
                 # cpu利用率
-                obj = CPUMemory.objects.filter(add_time__lt=item.add_time).last()
+                obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
                 cpu = obj.cpu
                 # 性能资源比
                 cpu_res_rate = (current_session/set_session)/cpu
@@ -851,7 +874,7 @@ def api4_query_task_cpu(req):
                 # 转发速率
                 rx_rate = item.rx_rate
                 # cpu利用率
-                obj = CPUMemory.objects.filter(add_time__lt=item.add_time).last()
+                obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
                 cpu = obj.cpu
                 # 性能资源比
                 cpu_res_rate = rx_rate/cpu
@@ -882,7 +905,7 @@ def api4_query_task_cpu(req):
                 current_session = item.session_num
                 set_session = TestCaseState.objects.get(task_id=taskid).set_session
                 # cpu利用率
-                obj = CPUMemory.objects.filter(add_time__lt=item.add_time).last()
+                obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
                 cpu = obj.cpu
                 # 性能资源比
                 cpu_res_rate = (rx_rate+current_session/set_session)/cpu
@@ -929,7 +952,7 @@ def api4_query_task_memory(req):
             #     current_session = item.session_num
             #     set_session = TestCaseState.objects.get(task_id=taskid).set_session
             #     # memory利用率
-            #     obj = CPUMemory.objects.filter(add_time__lt=item.add_time).last()
+            #     obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
             #     memory = obj.memory
             #     # 性能资源比
             #     memory_res_rate = (current_session / set_session) / memory
@@ -957,7 +980,7 @@ def api4_query_task_memory(req):
             #     # 转发速率
             #     rx_rate = item.rx_rate
             #     # cpu利用率
-            #     obj = CPUMemory.objects.filter(add_time__lt=item.add_time).last()
+            #     obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
             #     memory = obj.memory
             #     # 性能资源比
             #     memory_res_rate = rx_rate / memory
@@ -988,7 +1011,7 @@ def api4_query_task_memory(req):
             #     current_session = item.session_num
             #     set_session = TestCaseState.objects.get(task_id=taskid).set_session
             #     # cpu利用率
-            #     obj = CPUMemory.objects.filter(add_time__lt=item.add_time).last()
+            #     obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
             #     memory = obj.memory
             #     # 性能资源比
             #     memory_res_rate = (rx_rate + current_session / set_session) / memory
