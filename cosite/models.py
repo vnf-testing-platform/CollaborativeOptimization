@@ -88,7 +88,7 @@ class TestCaseState(models.Model):
     set_flow = models.CharField(help_text='测试流量', max_length=100, default='-1')
     set_session = models.IntegerField(help_text='测试Session数', default='-1')
     type_name = models.CharField(help_text='测试用例类型', default='-1', max_length=100)
-    add_time = models.DateTimeField(help_text='添加时间', default=datetime.now())
+    add_time = models.DateTimeField(help_text='添加时间', default=datetime.now, blank=True)
     current_state = models.BooleanField(help_text='当前状态', default=False)
 
     def __str__(self):

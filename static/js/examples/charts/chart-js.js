@@ -7,6 +7,8 @@ var pie = document.getElementById("pie-chart");
 var polar = document.getElementById("polar-chart");
 var radar = document.getElementById("radar-chart");
 
+var Session_chart = document.getElementById("Session_chart");
+
 var options ={
     scales: {
         yAxes: [{
@@ -154,6 +156,21 @@ $(function(){
                   {
                       case 'VNF_1_Concurrent_Session_Capacity':
                           var taskType = '1';
+                      //      var casePerformance =  '<div class="timeline-box">'+
+                      //       '<div class="timeline-icon bg-primary">'+
+                      //           '<i class="fa fa-check"></i>'+
+                      //       '</div>'+
+                      //       '<div class="timeline-content">'+
+                      //            '<h5><b id="session_name"></b></h5>'+
+                      //           '<div  id="area_chart11" class="panel-content">'+
+                      //               '<iframe class="chartjs-hidden-iframe" tabindex="-1" style="width: 100%; display: block; border: 0px; height: 0px; margin: 0px; position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px;"></iframe>'+
+                      //              '<canvas id="Session_chart" width="490" height="318" style="display: block; width: 490px; height: 318px;"></canvas>'+
+                      //           '</div>'+
+                      //       '</div>'+
+                      //   '</div>'
+                      //
+                      // var taskTimeLine = $('#taskTimeLine');
+                      // $('#taskTimeLine').append(casePerformance);
                           break;
                       case 'VNF_2_VBRAS_Client_Forwarding_Performance':
                           var taskType = '2';
@@ -244,6 +261,86 @@ $(function(){
                   });
               })
 
+             $.ajax('/api/v1/get-index-case-performance',{
+                  method: 'POST',
+                  data:
+                  JSON.stringify({
+                      taskid: taskId,
+                      tasktype:taskType,
+                  }),
+              }).done(function (data) {
+                  if (taskType == '1'){
+
+                      var cur_rate = [];   // times, x axis
+                      var cur_session = []; // dataset
+                      var time_line = [];
+                      var per_dataset = [];
+                      data.forEach(function (item) {
+                          // alert(item);
+                          // alert(item['add_time']);
+                          time_line.push(item['add_time']);
+                          cur_rate.push(item['cur_rate']);
+                          cur_session.push(item['cur_session']);time_line
+                      });
+                      // alert(time_line[0]);
+                      per_dataset.push(
+                          {
+                              label:'已完成session数量',
+                              fill: false,
+                              backgroundColor: "#37d177",
+                              borderColor: "#37d177",
+                              borderCapStyle: 'butt',
+                              borderDash: [],
+                              borderDashOffset: 0.0,
+                              borderJoinStyle: 'miter',
+                              pointBorderColor: "rgba(75,192,192,1)",
+                              pointBackgroundColor: "#fff",
+                              pointBorderWidth: 1,
+                              pointHoverRadius: 5,
+                              pointHoverBackgroundColor: "343d3e",
+                              pointHoverBorderColor: "rgba(220,220,220,1)",
+                              pointHoverBorderWidth: 2,
+                              pointRadius: 1,
+                              pointHitRadius: 10,
+                              data: cur_session,
+                              spanGaps: false
+                          },
+                          {
+
+                              label: "上线速率",
+                              fill: false,
+                              backgroundColor: "#FFCE56",
+                              borderColor: "#FFCE56",
+                              borderCapStyle: 'butt',
+                              borderDash: [],
+                              borderDashOffset: 0.0,
+                              borderJoinStyle: 'miter',
+                              pointBorderColor: "rgba(75,192,192,1)",
+                              pointBackgroundColor: "#fff",
+                              pointBorderWidth: 1,
+                              pointHoverRadius: 5,
+                              pointHoverBackgroundColor: "#FFCE56",
+                              pointHoverBorderColor: "rgba(220,220,220,1)",
+                              pointHoverBorderWidth: 2,
+                              pointRadius: 1,
+                              pointHitRadius: 10,
+                              data: cur_rate,
+                              spanGaps: false
+                          });
+                      // alert(Session_chart);
+                      line = new Chart(document.getElementById("Session_chart"), {
+                          type: 'line',
+                          data: {
+                              labels: time_line,
+                              datasets: per_dataset,
+                          }
+                        });
+                  }
+
+              })
+
+
+
               $.ajax('/api/v1/index-task-details', {
                 method: 'POST',
                 data:
@@ -253,79 +350,72 @@ $(function(){
                       flag: 1,
                   }),
               }).done(function (data) {
-                  var currentData = '<h6>已完成session数：'+ data.current_session +'</h6>' +
-                                '<h6>已完成：<span class="code">'+ data.current_session/data.set_session*100 +'%</span></h6>'
+
                   switch(taskType)
                   {
                       case '1':
 
                           var taskTypeTitle = 'PPPOE并发会话容量测试';
-                          var taskDetail = '';
+                          var currentData = '<h6>设置session数：'+ data.set_session +'</h6>' +
+                                '<h6>已完成session数：'+ data.current_session +'</h6>' +
+                                '<h6>已完成：<span class="code">'+ data.current_session/data.set_session*100 +'%</span></h6>'
+
                           break;
                       case '2':
                           var taskTypeTitle = 'vBRAS用户侧转发性能测试';
-                          var taskDetail = '<h6>68字节 平均时延 <span class="code" id="FS_68">' + data.frame_size_68 + 'μs</span></h6>' +
+                          var currentData = '<h6>68字节 平均时延 <span class="code" id="FS_68">' + data.frame_size_68 + 'μs</span></h6>' +
                                 '<h6>128字节 平均时延 <span class="code" id="FS_128">' + data.frame_size_128 + 'μs</span></h6>' +
                                 '<h6>256字节 平均时延 <span class="code" id="FS_256">' + data.frame_size_256 + 'μs</span></h6>' +
                                 '<h6>512字节 平均时延 <span class="code" id="FS_512">' + data.frame_size_512 + 'μs</span></h6>' +
                                 '<h6>1024字节 平均时延 <span class="code" id="FS_1024">' + data.frame_size_1024 + 'μs</span></h6>' +
                                 '<h6>1280字节 平均时延 <span class="code" id="FS_1280">' + data.frame_size_1280 + 'μs</span></h6>' +
                                 '<h6>1518字节 平均时延 <span class="code" id="FS_1518">' + data.frame_size_1518 + 'μs</span></h6>'
+
                           break;
                       case '3':
                           var taskTypeTitle = 'vBRAS综合上网业务测试';
-                          var taskDetail = '<h6>测试业务：宽带上网（PPPoE）+ IPTV（PPPoE）+ ITMS（IPoE）+ VoIP（IPoE）</h6>'
+                          var currentData = '<h6>测试业务：宽带上网（PPPoE）+ IPTV（PPPoE）+ ITMS（IPoE）+ VoIP（IPoE）</h6>'
                           break;
                   }
+                  document.getElementById("taskTypeTitle").innerHTML = taskTypeTitle;
+                  document.getElementById("currentData").innerHTML = currentData;
+                  document.getElementById("begin_time").innerHTML = data.begin_time;
 
-                  var currentTask = '<div class="timeline-box">' +
-                            '<div class="timeline-icon bg-primary">' +
-                                '<i class="fa fa-tasks"></i>' +
-                            '</div>' +
-                            '<div class="timeline-content">' +
-                                '<h4 class="tl-title">正在运行的测试用例</h4>' +
-                                '<p class="text-bold">' + taskTypeTitle + '</p>' +
-                                '<h6>测试session数：'+ data.set_session +'</h6>' +
-                                currentData + taskDetail +
-                            '</div>' +
-                            '<div class="timeline-footer">' +
-                                '<span>开始时间：' + data.begin_time + '</span>' +
-                            '</div>' +
-                        '</div>'
+                  // var currentTask = '<div class="timeline-box">' +
+                  //           '<div class="timeline-icon bg-primary">' +
+                  //               '<i class="fa fa-tasks"></i>' +
+                  //           '</div>' +
+                  //           '<div class="timeline-content">' +
+                  //               '<h4 class="tl-title">正在运行的测试用例</h4>' +
+                  //               '<p class="text-bold">' + taskTypeTitle + '</p>' +
+                  //               '<h6>测试session数：'+ data.set_session +'</h6>' +
+                  //               currentData + taskDetail +
+                  //           '</div>' +
+                  //           '<div class="timeline-footer">' +
+                  //               '<span>开始时间：' + data.begin_time + '</span>' +
+                  //           '</div>' +
+                  //       '</div>'
 
-                  var reportedTask = '<div class="timeline-box">' +
-                            '<div class="timeline-icon bg-primary">' +
-                                '<i class="fa fa-file"></i>' +
-                            '</div>' +
-                            '<div class="timeline-content">' +
-                                '<h4 class="tl-title">生成报告</h4>' +
-                                '<p class="text-bold">' + taskTypeTitle + '</p>' +
-                                '<h6>测试session数：'+ data.set_session +'</h6>' + taskDetail +
-                            '</div>' +
-                            '<div class="timeline-footer">' +
-                                '<span>开始时间：' + data.begin_time + '</span>' +
-                            '</div>' +
-                        '</div>'
-                   var completedTask = '<div class="timeline-box">' +
-                            '<div class="timeline-icon bg-primary">' +
-                                '<i class="fa fa-check"></i>' +
-                            '</div>' +
-                            '<div class="timeline-content">' +
-                                '<h4 class="tl-title">测试完成</h4>' +
-                                '<p class="text-bold">' + taskTypeTitle + '</p>' +
-                                '<h6>测试session数：'+ data.set_session +'</h6>' + taskDetail +
-                            '</div>' +
-                            '<div class="timeline-footer">' +
-                                '<span>开始时间：' + data.begin_time + '</span>' +
-                            '</div>' +
-                        '</div>'
 
-                  var taskTimeLine = $('#taskTimeLine');
-                  taskTimeLine.children().remove();
+                  // var casePerformance =  '<div class="timeline-box">'+
+                  //           '<div class="timeline-icon bg-primary">'+
+                  //               '<i class="fa fa-check"></i>'+
+                  //           '</div>'+
+                  //           '<div class="timeline-content">'+
+                  //                '<h5><b id="session_name"></b></h5>'+
+                  //               '<div  id="area_chart11" class="panel-content">'+
+                  //                   '<iframe class="chartjs-hidden-iframe" tabindex="-1" style="width: 100%; display: block; border: 0px; height: 0px; margin: 0px; position: absolute; left: 0px; right: 0px; top: 0px; bottom: 0px;"></iframe>'+
+                  //                  '<canvas id="Session_chart" width="490" height="318" style="display: block; width: 490px; height: 318px;"></canvas>'+
+                  //               '</div>'+
+                  //           '</div>'+
+                  //       '</div>'
 
-                  $('#taskTimeLine').append(currentTask);
-                  $('#taskTimeLine').append(reportedTask);
-                  $('#taskTimeLine').append(completedTask);
+                  // var taskTimeLine = $('#taskTimeLine');
+                  // taskTimeLine.children()[1].remove();
+                  //
+                  // $('#taskTimeLine').append(currentTask);
+                  // $('#taskTimeLine').append(casePerformance);
+
               })
 
          }else{

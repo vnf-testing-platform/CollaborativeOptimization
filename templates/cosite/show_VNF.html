@@ -72,23 +72,44 @@
 </form>
 
   <div class="row animated fadeInUp">
-    <div class="col-md-6">
+   <div class="col-md-6">
         <h4 class="section-subtitle"><b>性能资源比(CPU)</b></h4>
+                <div class="panel">
+                    <div class="panel-content" >
+                    <canvas id="myChart_line" width="400" height="280"></canvas>
+                         <table class="table">
+                        <tr>
+                        <th>CPU平均利用率</th>
+                        <th>稳定系数</th>
+                        </tr>
+                        <tr>
+                        <td id="CPU_usage"></td>
+                        <td id="CPU_SF"></td>
+                        </tr>
+                    </table>
+                    </div>
+                </div>
+    </div>
+
+   <div class="col-md-6">
+        <h4 class="section-subtitle"><b>性能资源比(内存)</b></h4>
         <div class="panel">
             <div class="panel-content">
-                <canvas id="myChart_line" width="400" height="280"></canvas>
+                <canvas id="myChart_area" width="400" height="350"></canvas>
+{#                <table class="table">#}
+{#                        <tr>#}
+{#                        <th></th>#}
+{#                        <th></th>#}
+{#                        </tr>#}
+{#                        <tr>#}
+{#                        <td id="Memory_usage"></td>#}
+{#                        <td id="Memory_SF"></td>#}
+{#                        </tr>#}
+{#                    </table>#}
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
-        <h4 class="section-subtitle"><b>性能资源比(内存)</b></h4>
-        <div class="panel">
-            <div class="panel-content">
-                <canvas id="myChart_area" width="400" height="280"></canvas>
-            </div>
-        </div>
-    </div>
     <div class="col-md-12">
         <h4 class="section-subtitle"><b>资源利用稳定性</b> (标准差)</h4>
         <div class="panel">

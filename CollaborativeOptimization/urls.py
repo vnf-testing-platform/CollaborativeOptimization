@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'^api/v1/get-index-cpu/', coviews.api4_get_index_cpu),
     url(r'^api/v1/get-index-memory/', coviews.api4_get_index_memory),
 
+
     # index页面右侧的测试用例运行详情
     url(r'^api/v1/index-task-details', coviews.api4_index_task_details),
 
@@ -87,4 +88,13 @@ urlpatterns = [
 
     # 获取CPU和Memory的值，并存入
     url(r'^api/v1/index-save-cpu-memory', coviews.api4_save_cpu_memory),
+
+    # 导出测试报告
+    url(r'^api/v1/report', coviews.api4_report),
+
+    # 性能页面cpu详情
+    url(r'^api/v1/query-cpu-details', coviews.api4_query_cpu_details),
+
+    # index.html 测试用例性能
+    url(r'^api/v1/get-index-case-performance', coviews.api4_get_index_case_performance),
 ]

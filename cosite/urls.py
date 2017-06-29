@@ -21,7 +21,7 @@ urlpatterns = {
     url('pages_sign-in/$', views.pages_sign_in),
     url('pages_forgot-password/$', views.pages_forgot_password),
     url('pages_lock-screen/$', views.pages_lock_screen),
-    url('report_vBRAS_session/$', views.report_session),
+    # url('report_vBRAS_session/$', views.report_session),
     url('report_vBRAS_frame/$', views.report_frame),
-    url('report_vBRAS_multi/$', views.report_multi),
+    # url('report_vBRAS_multi/$', views.report_multi),
 }

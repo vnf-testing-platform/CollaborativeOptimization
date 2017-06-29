@@ -7,6 +7,8 @@ import uuid
 import time
 import datetime
 import pytz
+import numpy
+import math
 from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.gaussian_process import GaussianProcessClassifier
@@ -51,16 +53,8 @@ def pages_lock_screen(req):
     return render(req, 'cosite/pages_lock-screen.html')
 
 
-def report_session(req):
-    return render(req, 'cosite/report_vBRAS_session.html')
-
-
 def report_frame(req):
     return render(req, 'cosite/report_vBRAS_frame.html')
-
-
-def report_multi(req):
-    return render(req, 'cosite/report_vBRAS_multi.html')
 
 
 # def api4get_data(req):
@@ -323,14 +317,22 @@ def api4_vnf1_itest(req):
         else:
             obj.save()
 
-        if TestCaseState.objects.get(task_id=d.get('taskId')).set_session == result['session_num']:
-            cur_obj = TestCaseState.objects.get(current_state=True)
+        # print('-----')
+        # print("set_session::::" + str(TestCaseState.objects.get(task_id=d.get('taskId')).set_session))
+        # print("current_session::::" + str(result['session_num']))
+        # print('-----')
 
-            if cur_obj:
-                cur_obj.current_state = False
-                cur_obj.save()
-
-        print(d)
+        # set_session = TestCaseState.objects.get(task_id=d.get('taskId')).set_session
+        # cur_session = int(result['session_num'])
+        #
+        # if set_session == cur_session:
+        #     print('same!!!')
+        #     cur_obj = TestCaseState.objects.get(current_state=True)
+        #
+        #     if cur_obj:
+        #         cur_obj.current_state = False
+        #         cur_obj.save()
+        #         print('save change to false already!!!!!!')
 
         data = {'log': 'test'}
         return HttpResponse(json.dumps(data), content_type='application/json')
@@ -358,6 +360,7 @@ def api4_vnf2_uuid(req):
         # mt.add_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         # obj.add_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         obj.type_name = 'VNF_2_VBRAS_Client_Forwarding_Performance'
+
         obj.save()
 
         # pst = UserTransTest()
@@ -565,7 +568,7 @@ def api4_save_cpu_memory(req):
         print("Result:{0}".format(result_mea))
         # 显示measurements中的libvirt_domain_metrics的最新的一条数据,返回ResultSet
         result = client.query(
-            'select "cpu_time_pct","mem_rss","time" from "libvirt_domain_metrics" where time>now() - 1s limit 1')
+            'select "cpu_time_pct","mem_rss","mem_actual","time" from "libvirt_domain_metrics" where time>now() - 1s limit 1')
         # 返回list
         result_point = list(result.get_points(measurement='libvirt_domain_metrics'))
         print(result_point[0])  # 输出一个dict结构的字段
@@ -573,7 +576,11 @@ def api4_save_cpu_memory(req):
         cpu_value = result_point[0]['cpu_time_pct']
         print(cpu_value)
         print('======输出Memory利用率======')
-        mem_value = result_point[0]['mem_rss']
+        mem_rss = result_point[0]['mem_rss']
+        mem_actual = result_point[0]['mem_actual']
+        mem_value = mem_rss/mem_actual
+        if mem_value > 1:
+            mem_value = 1
         print(mem_value)
         print('======输出时间戳======')
         time_value = result_point[0]['time']
@@ -627,7 +634,9 @@ def api4_get_index_cpu(req):
             items = CPUMemory.objects.filter(task_id=taskid).all()
             for item in items:
                 rst = {}
-                rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
+                # rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
                 rst['cpu'] = item.cpu
                 data.append(rst)
 
@@ -656,7 +665,9 @@ def api4_get_index_memory(req):
             items = CPUMemory.objects.filter(task_id=task_id).all()
             for item in items:
                 rst = {}
-                rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
+                # rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
                 rst['memory'] = item.memory
                 data.append(rst)
 
@@ -672,13 +683,42 @@ def api4_index_task_details(req):
 
         taskid = d.get('taskid')
         tasktype = d.get('tasktype')
-        begin_time = TestCaseState.objects.get(task_id=taskid).add_time.strftime('%Y-%m-%d %H:%M:%S')
+
+        # time_flag = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+        # time_array = time.strptime(time_flag, "%Y-%m-%d %H:%M:%S")
+        # time_stamp = int(time.mktime(time_array))
+        # print(time_stamp)
+        # time_stamp += 28800
+        #
+        # rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time_stamp))
+        #
+        # begin_time = TestCaseState.objects.get(task_id=taskid).add_time.strftime('%Y-%m-%d %H:%M:%S')
+
+        item = TestCaseState.objects.get(task_id=taskid)
+        time_flag = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+        time_array = time.strptime(time_flag, "%Y-%m-%d %H:%M:%S")
+        time_stamp = int(time.mktime(time_array))
+        print(time_stamp)
+        time_stamp += 28800
+
+        begin_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time_stamp))
+
         # current_session = PPPoESessionTest.objects.filter(task_id=taskid).last().session_num
         set_session = TestCaseState.objects.get(task_id=taskid).set_session
 
         if tasktype == '1':
             # 待测代码
             current_session = PPPoESessionTest.objects.filter(task_id=taskid).last().session_num
+            # 终止测试用例
+            if set_session == current_session:
+                print('same!!!')
+                cur_obj = TestCaseState.objects.get(current_state=True)
+
+                if cur_obj:
+                    cur_obj.current_state = False
+                    cur_obj.save()
+                    print('save change to false already!!!!!!')
+
             data = {'set_session': set_session, 'current_session': current_session, 'begin_time': begin_time}
             # 测试数据
             # data = {'set_session': 10000, 'current_session': 8000, 'begin_time': '2017-06-06 10:00'}
@@ -823,12 +863,13 @@ def api4_query_task_cpu(req):
             for item in items:
                 rst = {}
                 # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
-                rst['add_time'] =  time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
                 # 上线速率
                 current_session = item.session_num
                 set_session = TestCaseState.objects.get(task_id=taskid).set_session
                 # cpu利用率
-                obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
+                obj = CPUMemory.objects.filter(add_time__gt=item.add_time).first()
                 cpu = obj.cpu
                 # 性能资源比
                 cpu_res_rate = (current_session/set_session)/cpu
@@ -852,11 +893,13 @@ def api4_query_task_cpu(req):
             items = UserTransTest.objects.filter(task_id=taskid)
             for item in items:
                 rst = {}
-                rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
                 # 转发速率
                 rx_rate = item.rx_rate
                 # cpu利用率
-                obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
+                obj = CPUMemory.objects.filter(add_time__gt=item.add_time).first()
                 cpu = obj.cpu
                 # 性能资源比
                 cpu_res_rate = rx_rate/cpu
@@ -880,14 +923,16 @@ def api4_query_task_cpu(req):
             items = MultiTest.objects.filter(task_id=taskid)
             for item in items:
                 rst = {}
-                rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
                 # 转发速率
                 rx_rate = item.rx_rate
                 # 上线速率
                 current_session = item.session_num
                 set_session = TestCaseState.objects.get(task_id=taskid).set_session
                 # cpu利用率
-                obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
+                obj = CPUMemory.objects.filter(add_time__gt=item.add_time).first()
                 cpu = obj.cpu
                 # 性能资源比
                 cpu_res_rate = (rx_rate+current_session/set_session)/cpu
@@ -925,92 +970,99 @@ def api4_query_task_memory(req):
 
         if task_type == '1':
             # 待测代码
-            # items = PPPoESessionTest.objects.filter(task_id=taskid)
-            # for item in items:
-            #     rst = {}
-            #     # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
-            #     rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
-            #     # 上线速率
-            #     current_session = item.session_num
-            #     set_session = TestCaseState.objects.get(task_id=taskid).set_session
-            #     # memory利用率
-            #     obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
-            #     memory = obj.memory
-            #     # 性能资源比
-            #     memory_res_rate = (current_session / set_session) / memory
-            #     rst['memory'] = memory_res_rate
-            #     result.append(rst)
+            items = PPPoESessionTest.objects.filter(task_id=taskid)
+            for item in items:
+                rst = {}
+                # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                # rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
+                # 上线速率
+                current_session = item.session_num
+                set_session = TestCaseState.objects.get(task_id=taskid).set_session
+                # memory利用率
+                obj = CPUMemory.objects.filter(add_time__gt=item.add_time).first()
+                memory = obj.memory
+
+                # 性能资源比
+                memory_res_rate = (current_session / set_session) / memory
+                rst['memory'] = memory_res_rate
+                result.append(rst)
 
             # 测试数据
-            result = [{'memory': 0.15, 'add_time': '2017-06-01 10:00:13'},
-                      {'memory': 0.21, 'add_time': '2017-06-01 10:00:16'},
-                      {'memory': 0.33, 'add_time': '2017-06-01 10:00:19'},
-                      {'memory': 0.32, 'add_time': '2017-06-01 10:00:22'},
-                      {'memory': 0.45, 'add_time': '2017-06-01 10:00:25'},
-                      {'memory': 0.57, 'add_time': '2017-06-01 10:00:28'},
-                      {'memory': 0.66, 'add_time': '2017-06-01 10:00:31'},
-                      {'memory': 0.89, 'add_time': '2017-06-01 10:00:35'},
-                      {'memory': 0.90, 'add_time': '2017-06-01 10:00:38'},
-                      {'memory': 0.93, 'add_time': '2017-06-01 10:00:41'}]
+            # result = [{'memory': 0.15, 'add_time': '2017-06-01 10:00:13'},
+            #           {'memory': 0.21, 'add_time': '2017-06-01 10:00:16'},
+            #           {'memory': 0.33, 'add_time': '2017-06-01 10:00:19'},
+            #           {'memory': 0.32, 'add_time': '2017-06-01 10:00:22'},
+            #           {'memory': 0.45, 'add_time': '2017-06-01 10:00:25'},
+            #           {'memory': 0.57, 'add_time': '2017-06-01 10:00:28'},
+            #           {'memory': 0.66, 'add_time': '2017-06-01 10:00:31'},
+            #           {'memory': 0.89, 'add_time': '2017-06-01 10:00:35'},
+            #           {'memory': 0.90, 'add_time': '2017-06-01 10:00:38'},
+            #           {'memory': 0.93, 'add_time': '2017-06-01 10:00:41'}]
 
         elif task_type == '2':
             # 待测代码
-            # items = UserTransTest.objects.filter(task_id=taskid)
-            # for item in items:
-            #     rst = {}
-            #     rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
-            #     # 转发速率
-            #     rx_rate = item.rx_rate
-            #     # cpu利用率
-            #     obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
-            #     memory = obj.memory
-            #     # 性能资源比
-            #     memory_res_rate = rx_rate / memory
-            #     rst['memory'] = memory_res_rate
-            #     result.append(rst)
+            items = UserTransTest.objects.filter(task_id=taskid)
+            for item in items:
+                rst = {}
+                # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
+                # 转发速率
+                rx_rate = item.rx_rate
+                # cpu利用率
+                obj = CPUMemory.objects.filter(add_time__gt=item.add_time).first()
+                memory = obj.memory
+                # 性能资源比
+                memory_res_rate = rx_rate / memory
+                rst['memory'] = memory_res_rate
+                result.append(rst)
 
             # 测试数据
-            result = [{'memory': 0.15, 'add_time': '2017-06-02 12:00:13'},
-                      {'memory': 0.21, 'add_time': '2017-06-02 12:00:16'},
-                      {'memory': 0.33, 'add_time': '2017-06-02 12:00:19'},
-                      {'memory': 0.32, 'add_time': '2017-06-02 12:00:22'},
-                      {'memory': 0.45, 'add_time': '2017-06-02 12:00:25'},
-                      {'memory': 0.57, 'add_time': '2017-06-02 12:00:28'},
-                      {'memory': 0.66, 'add_time': '2017-06-02 12:00:31'},
-                      {'memory': 0.89, 'add_time': '2017-06-02 12:00:35'},
-                      {'memory': 0.90, 'add_time': '2017-06-02 12:00:38'},
-                      {'memory': 0.93, 'add_time': '2017-06-02 12:00:41'}]
+            # result = [{'memory': 0.15, 'add_time': '2017-06-02 12:00:13'},
+            #           {'memory': 0.21, 'add_time': '2017-06-02 12:00:16'},
+            #           {'memory': 0.33, 'add_time': '2017-06-02 12:00:19'},
+            #           {'memory': 0.32, 'add_time': '2017-06-02 12:00:22'},
+            #           {'memory': 0.45, 'add_time': '2017-06-02 12:00:25'},
+            #           {'memory': 0.57, 'add_time': '2017-06-02 12:00:28'},
+            #           {'memory': 0.66, 'add_time': '2017-06-02 12:00:31'},
+            #           {'memory': 0.89, 'add_time': '2017-06-02 12:00:35'},
+            #           {'memory': 0.90, 'add_time': '2017-06-02 12:00:38'},
+            #           {'memory': 0.93, 'add_time': '2017-06-02 12:00:41'}]
 
         elif task_type == '3':
             # 待测代码
-            # items = MultiTest.objects.filter(task_id=taskid)
-            # for item in items:
-            #     rst = {}
-            #     rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
-            #     # 转发速率
-            #     rx_rate = item.rx_rate
-            #     # 上线速率
-            #     current_session = item.session_num
-            #     set_session = TestCaseState.objects.get(task_id=taskid).set_session
-            #     # cpu利用率
-            #     obj = CPUMemory.objects.filter(add_time__lt=(item.add_time-28800)).last()
-            #     memory = obj.memory
-            #     # 性能资源比
-            #     memory_res_rate = (rx_rate + current_session / set_session) / memory
-            #     rst['memory'] = memory_res_rate
-            #     result.append(rst)
+            items = MultiTest.objects.filter(task_id=taskid)
+            for item in items:
+                rst = {}
+                # rst['add_time'] = item.add_time.strftime('%Y-%m-%d %H:%M:%S')
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
+                # 转发速率
+                rx_rate = item.rx_rate
+                # 上线速率
+                current_session = item.session_num
+                set_session = TestCaseState.objects.get(task_id=taskid).set_session
+                # cpu利用率
+                obj = CPUMemory.objects.filter(add_time__gt=item.add_time).first()
+                memory = obj.memory
+                # 性能资源比
+                memory_res_rate = (rx_rate + current_session / set_session) / memory
+                rst['memory'] = memory_res_rate
+                result.append(rst)
 
             # 测试数据
-            result = [{'memory': 0.15, 'add_time': '2017-06-03 13:00:13'},
-                      {'memory': 0.21, 'add_time': '2017-06-03 13:00:16'},
-                      {'memory': 0.33, 'add_time': '2017-06-03 13:00:19'},
-                      {'memory': 0.32, 'add_time': '2017-06-03 13:00:22'},
-                      {'memory': 0.45, 'add_time': '2017-06-03 13:00:25'},
-                      {'memory': 0.57, 'add_time': '2017-06-03 13:00:28'},
-                      {'memory': 0.66, 'add_time': '2017-06-03 13:00:31'},
-                      {'memory': 0.89, 'add_time': '2017-06-03 13:00:35'},
-                      {'memory': 0.90, 'add_time': '2017-06-03 13:00:38'},
-                      {'memory': 0.93, 'add_time': '2017-06-03 13:00:41'}]
+            # result = [{'memory': 0.15, 'add_time': '2017-06-03 13:00:13'},
+            #           {'memory': 0.21, 'add_time': '2017-06-03 13:00:16'},
+            #           {'memory': 0.33, 'add_time': '2017-06-03 13:00:19'},
+            #           {'memory': 0.32, 'add_time': '2017-06-03 13:00:22'},
+            #           {'memory': 0.45, 'add_time': '2017-06-03 13:00:25'},
+            #           {'memory': 0.57, 'add_time': '2017-06-03 13:00:28'},
+            #           {'memory': 0.66, 'add_time': '2017-06-03 13:00:31'},
+            #           {'memory': 0.89, 'add_time': '2017-06-03 13:00:35'},
+            #           {'memory': 0.90, 'add_time': '2017-06-03 13:00:38'},
+            #           {'memory': 0.93, 'add_time': '2017-06-03 13:00:41'}]
         else:
             result = {}
 
@@ -1032,6 +1084,128 @@ def api4_query_task_stability(req):
 
         return HttpResponse(json.dumps(result), content_type='application/json')
         # return HttpResponse(json.dumps(data), content_type='application/json')
+    return HttpResponse('Permission denied!', status=403)
+
+
+# 导出测试报告
+def api4_report(req):
+    if req.method == 'POST':
+
+        d = json.loads(req.body.decode('utf-8'))
+        print(d)
+        print('receive report request!!!')
+
+        # data = {}
+        task_id = d.get('taskid')
+        task_type = d.get('tasktype')
+
+        if task_type == '1':
+            # 待测代码
+            items = PPPoESessionTest.objects.filter(task_id=task_id)
+            max_session = items.last().session_num
+            min_con = items.order_by("connect_rate").first().connect_rate
+            max_memory = CPUMemory.objects.filter(task_id=task_id).order_by("memory").last().memory
+            sum_con = 0
+            count = 0
+            for item in items:
+                count += 1
+                sum_con += item.connect_rate
+            avg_con = sum_con/count
+            data = {'max_session': max_session, 'avg_con': avg_con, 'min_con': min_con, 'max_memory': max_memory,
+                    'max_session_std': 100,'avg_con_std': 100, 'min_con_std': 100, 'max_memory_std': 100}
+            # data = {'max_session': 100, 'avg_con': 100, 'min_con': 100, 'max_memory': 100,
+            #         'max_session_std': 100,'avg_con_std': 100, 'min_con_std': 100, 'max_memory_std': 100}
+
+        elif task_type == '2':
+            # 待测代码
+            items = UserTransTest.objects.filter(task_id=task_id)
+            rx_64 = items.filter(frame_size=68).first().rx_rate
+            rx_128 = items.filter(frame_size=128).first().rx_rate
+            rx_256 = items.filter(frame_size=256).first().rx_rate
+            rx_512 = items.filter(frame_size=512).first().rx_rate
+            rx_1024 = items.filter(frame_size=1024).first().rx_rate
+            rx_1280 = items.filter(frame_size=1280).first().rx_rate
+            rx_1518 = items.filter(frame_size=1518).first().rx_rate
+            data = {'rx_64': rx_64, 'rx_128': rx_128, 'rx_256': rx_256, 'rx_512': rx_512, 'rx_1024': rx_1024,
+                    'rx_1280': rx_1280, 'rx_1518': rx_1518, 'rx_64_std': 100, 'rx_128_std': 100,
+                    'rx_256_std': 100, 'rx_512_std': 100, 'rx_1024_std': 100, 'rx_1280_std': 100, 'rx_1518_std': 100}
+            # data = {'rx_64': 100, 'rx_128': 100, 'rx_256': 100, 'rx_512': 100, 'rx_1024': 100, 'rx_1280': 100,
+            #         'rx_1518': 100, 'rx_64_std': 100, 'rx_128_std': 100,
+            #         'rx_256_std': 100, 'rx_512_std': 100, 'rx_1024_std': 100, 'rx_1280_std': 100, 'rx_1518_std': 100}
+
+        elif task_type == '3':
+            data = {'max_session': 100, 'avg_con': 100, 'min_con': 100, 'max_memory': 100,
+                    'max_session_std': 100, 'avg_con_std': 100, 'min_con_std': 100, 'max_memory_std': 100}
+
+        else:
+            data = {}
+
+        return HttpResponse(json.dumps(data), content_type='application/json')
+    return HttpResponse('Permission denied!', status=403)
+
+
+# 性能页面cpu详情
+def api4_query_cpu_details(req):
+    if req.method == 'POST':
+        d = json.loads(req.body.decode('utf-8'))
+        print(d)
+
+        taskid = d.get('taskid')
+        items = CPUMemory.objects.filter(task_id=taskid)
+
+        count = 0
+        sum = 0
+        for item in items:
+            count += 1
+            sum += item.cpu
+        avg_cpu = sum/count
+
+        sum1 = 0
+        for item in items:
+            sum1 += math.pow((item.cpu - avg_cpu), 2)
+
+        stability_factor = math.sqrt(sum1/count)
+        data = {'avg_cpu': avg_cpu, 'stability_factor': stability_factor}
+
+        # data = {'avg_cpu': 50, 'stability_factor': 0.8}
+        return HttpResponse(json.dumps(data), content_type='application/json')
+    return HttpResponse('Permission denied!', status=403)
+
+
+# index.html 测试用例性能
+def api4_get_index_case_performance(req):
+    if req.method == 'POST':
+
+        d = json.loads(req.body.decode('utf-8'))
+        print(d)
+
+        result = []
+        taskid = d.get('taskid')
+        task_type = d.get('tasktype')
+        if task_type == '1':
+            items = PPPoESessionTest.objects.filter(task_id=taskid)
+            for item in items:
+                rst = {}
+                time_value = str(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))).split(' ')
+                rst['add_time'] = time_value[1]
+                # rst['add_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(item.add_time))
+                rst['cur_session'] = item.session_num
+                rst['cur_rate'] = item.connect_rate
+
+                result.append(rst)
+        else:
+            result = []
+
+        # 测试数据
+        # result = [{'cur_session': 1000, 'cur_rate': 100, 'add_time': '2017-06-03 13:00:13'},
+        #           {'cur_session': 2000, 'cur_rate': 200, 'add_time': '2017-06-03 13:00:16'},
+        #           {'cur_session': 3500, 'cur_rate': 190, 'add_time': '2017-06-03 13:00:19'},
+        #           {'cur_session': 4800, 'cur_rate': 150, 'add_time': '2017-06-03 13:00:22'},
+        #           {'cur_session': 6200, 'cur_rate': 400, 'add_time': '2017-06-03 13:00:25'},
+        #           {'cur_session': 8800, 'cur_rate': 105, 'add_time': '2017-06-03 13:00:28'},
+        #           {'cur_session': 10000, 'cur_rate': 10, 'add_time': '2017-06-03 13:00:31'}]
+
+        return HttpResponse(json.dumps(result), content_type='application/json')
     return HttpResponse('Permission denied!', status=403)
 
 

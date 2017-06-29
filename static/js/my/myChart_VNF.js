@@ -49,7 +49,19 @@ $(document).ready(function() {
                         datasets: Datasets_CPU,
                     }
                 });
-            })
+            });
+
+             $.ajax('/api/v1/query-cpu-details', {
+                method: 'POST',
+                data: JSON.stringify({
+                    taskid:test_option,
+                }),
+            }).done(function (data) {
+                var CPU_usage = data["avg_cpu"];
+                var CPU_SF = data["stability_factor"];
+                document.getElementById("CPU_usage").innerHTML = CPU_usage;
+                document.getElementById("CPU_SF").innerHTML = CPU_SF;
+            });
 
             $.ajax('/api/v1/query-task-memory', {
                 method: 'POST',
